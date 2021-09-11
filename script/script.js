@@ -1,12 +1,84 @@
-document.addEventListener('DOMContentLoaded', function() {
-    'use strict';
+"use strict";
+
+document.addEventListener('DOMContentLoaded', function () {
     const btnOpenModal = document.querySelector('#btnOpenModal');
     const modalBlock = document.querySelector('#modalBlock');
     const closeModal = document.querySelector('#closeModal');
     const questionTitle = document.querySelector('#question');
     const formAnswers = document.querySelector('#formAnswers');
-    const burgerName = 'Стандарт';
-    const burgerImageUrl = '../image/burger.png';
+    const nextButton = document.querySelector('#next');
+    const prevButton = document.querySelector('#prev');
+    const sendButton = document.querySelector('#send');
+
+    const questions = [{
+            question: "Какого цвета бургер?",
+            answers: [{
+                    title: 'Стандарт',
+                    url: './image/burger.png'
+                },
+                {
+                    title: 'Черный',
+                    url: './image/burgerBlack.png'
+                }
+            ],
+            type: 'radio'
+        },
+        {
+            question: "Из какого мяса котлета?",
+            answers: [{
+                    title: 'Курица',
+                    url: './image/chickenMeat.png'
+                },
+                {
+                    title: 'Говядина',
+                    url: './image/beefMeat.png'
+                },
+                {
+                    title: 'Свинина',
+                    url: './image/porkMeat.png'
+                }
+            ],
+            type: 'radio'
+        },
+        {
+            question: "Дополнительные ингредиенты?",
+            answers: [{
+                    title: 'Помидор',
+                    url: './image/tomato.png'
+                },
+                {
+                    title: 'Огурец',
+                    url: './image/cucumber.png'
+                },
+                {
+                    title: 'Салат',
+                    url: './image/salad.png'
+                },
+                {
+                    title: 'Лук',
+                    url: './image/onion.png'
+                }
+            ],
+            type: 'checkbox'
+        },
+        {
+            question: "Добавить соус?",
+            answers: [{
+                    title: 'Чесночный',
+                    url: './image/sauce1.png'
+                },
+                {
+                    title: 'Томатный',
+                    url: './image/sauce2.png'
+                },
+                {
+                    title: 'Горчичный',
+                    url: './image/sauce3.png'
+                }
+            ],
+            type: 'radio'
+        }
+    ]
 
     btnOpenModal.addEventListener('click', () => {
         modalBlock.classList.add('d-block');
@@ -17,24 +89,101 @@ document.addEventListener('DOMContentLoaded', function() {
         modalBlock.classList.remove('d-block');
     });
 
+    // функция запуска тестирования
     const playTest = () => {
-        const renderQuestions = () => {
-            questionTitle.textContent = 'Какого цвета бургер Вы хотите?';
-            formAnswers.innerHTML = `
+        const finalAnswers = [];
+        let numberQuestion = 0;
+
+        //функция рендора ответов
+        const renderAnswers = (index) => {
+            questions[index].answers.forEach((answer) => {
+                const answerItem = document.createElement('div');
+                answerItem.classList.add('answers-item', 'd-flex', 'justify-content-center');
+                answerItem.innerHTML = `
                 <div class="answers-item d-flex flex-column">
-                    <input type="radio" id="answerItem1" name="answer" class="d-none">
-                    <label for="answerItem1" class="d-flex flex-column justify-content-between">
-                        <img class="answerImg" src="${burgerImageUrl}" alt="burger">
-                        <span>${burgerName}</span>
+                    <input type="${questions[index].type}" id="${answer.title}" name="answer" class="d-none" value="${answer.title}">
+                    <label for="${answer.title}" class="d-flex flex-column justify-content-between">
+                        <img class="answerImg" src="${answer.url}" alt="burger">
+                        <span>${answer.title}</span>
                     </label>
                 </div>
-            `
+                `;
+                formAnswers.appendChild(answerItem);
+            });
+        }
+
+        //функция рендора вопросов и ответов
+        const renderQuestions = (indexQuestion) => {
+            formAnswers.innerHTML = '';
+
+            switch (true) {
+                case (numberQuestion >= 0 && numberQuestion <= questions.length - 1):
+                    questionTitle.textContent = `${questions[indexQuestion].question}`;
+                    renderAnswers(indexQuestion);
+                    prevButton.classList.remove('d-none');
+                    nextButton.classList.remove('d-none');
+                    sendButton.classList.add('d-none');
+                    break;
+                case (numberQuestion === 0):
+                    prevButton.classList.add('d-none');
+                    break;
+                case (numberQuestion === questions.length):
+                    prevButton.classList.add('d-none');
+                    nextButton.classList.add('d-none');
+                    sendButton.classList.remove('d-none');
+
+                    formAnswers.innerHTML = `
+                    <div class='form-group'>
+                        <label for='numberPhone'>Enter your phone</label>
+                        <input type='phone' class='form-control' id='numberPhone'>
+                    </div>
+                    `;
+                    questionTitle.textContent = `Введите номер телефона`;
+                    break;
+                case (numberQuestion === questions.length + 1):
+                    questionTitle.textContent = `Конец`;
+                    formAnswers.textContent = 'Спасибо за прохождение теста';
+                    setTimeout(() => {
+                        modalBlock.classList.remove('d-block');
+                    }, 2000);
+                    break;
+            }
+        }
+
+        renderQuestions(numberQuestion);
+
+        const checkAnswer = () => {
+            const obj = {};
+
+            const inputs = [...formAnswers.elements].filter((input) => input.checked || input.id === 'numberPhone');
+
+            inputs.forEach((input, index) => {
+                if (numberQuestion >= 0 && numberQuestion <= questions.length -1) {
+                    obj[`${index}_${questions[numberQuestion].question}`] = input.value;
+                }
+                if(numberQuestion === questions.length) {
+                    obj['Номер телефона'] = input.value;
+                }
+            });
+
+            finalAnswers.push(obj);
+        }
+
+        //обработчики событий кнопок prev / next
+        nextButton.onclick = () => {
+            checkAnswer();
+            numberQuestion++;
+            renderQuestions(numberQuestion);
         };
-        return renderQuestions();    
-    };
+        prevButton.onclick = () => {
+            numberQuestion--;
+            renderQuestions(numberQuestion);
+        };
+        sendButton.onclick = () => {
+            checkAnswer();
+            numberQuestion++;
+            renderQuestions(numberQuestion);
+            console.log(finalAnswers);
+        }
+    }
 });
-
-
-// событие DOMContentLoaded обрабатывает js когда загрузился весь html:
-//dir выводит элемент как объект
-//console.dir(btnOpenModal);
